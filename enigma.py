@@ -10,6 +10,9 @@ class House:
 
         self.__class__.instances.append(self)
 
+    def __str__(self):
+        return " ".join((str(self.color), str(self.nationality), str(self.drink), str(self.pet), str(self.cigarette)))
+
 
 h_1, h_2, h_3, h_4, h_5 = House(nationality='Norway'), House(), House(drink='Milk'), House(), House()
 houses = [h_1, h_2, h_3, h_4, h_5]
@@ -41,8 +44,7 @@ class Constraint:
         for house in houses:
             if getattr(house, key) == val:
                 return houses.index(house)
-            else:
-                return list(map(lambda h: houses.index(h), houses))[0]
+        return list(map(lambda h: houses.index(h), houses))[0]
 
 
 constraints = [Constraint(c1={'nationality': 'England'}, c2={'color': 'Red'}, position=0),
@@ -77,7 +79,14 @@ def add_drink(house):
         if check_constraints('drink', drink):
             house.drink = drink
             drinks.remove(drink)
-            return True
+            if houses.index(house) == 4:
+                return True
+
+            if add_color(houses[houses.index(house) + 1]):
+                return True
+            else:
+                drinks.append(drink)
+                house.drink = None
 
     return False
 
@@ -140,6 +149,7 @@ def add_color(house):
         if check_constraints('color', color):
             house.color = color
             colors.remove(color)
+
             if add_nationality(house):
                 return True
             else:
@@ -148,14 +158,6 @@ def add_color(house):
     return False
 
 
-def add_houses(index=0):
-    if index == 4:
-        return True
-
-    if add_color(houses[index]):
-        return add_houses(index + 1)
-
-
-add_houses()
-for h in houses:
-    print(h.color, h.nationality, h.cigarette, h.drink, h.pet)
+if add_color(houses[0]):
+    for h in houses:
+        print(h.color, h.nationality, h.cigarette, h.drink, h.pet)
