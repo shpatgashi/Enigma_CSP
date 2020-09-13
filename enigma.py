@@ -31,13 +31,7 @@ class Constraint:
     def check_value(self, c_key, c_val):
         if {c_key: c_val} not in (self.c1, self.c2):
             return True
-        if type(self.offset) == list:
-            if self.position(self.c1) - self.position(self.c2) in self.offset:
-                return True
-        else:
-            if self.position(self.c1) - self.position(self.c2) == self.offset:
-                return True
-        return False
+        return self.pos()
 
     @staticmethod
     def position(x):
@@ -47,26 +41,51 @@ class Constraint:
                 return houses.index(house)
 
         x = list(map(lambda h: (houses.index(h) if getattr(h, key) is None else None), houses))
-        return next(item for item in x if item is not None)
+        return [item for item in x if item is not None]
+
+    # nese pozita e c1 edhe c2 - offset jon None ose == values return True
+
+    def pos(self):
+        x1 = self.position(self.c1)
+        x2 = self.position(self.c2)
+        if type(x1) == list:
+            x1 = next(iter(x1))
+
+        if type(self.offset) == int:
+            if type(x2) == list:
+                for x in x2:
+                    if x1 - x == self.offset:
+                        return True
+            else:
+                return x1 - self.offset == x2
+        else:
+            if type(x2) == int:
+                return x1 - x2 in self.offset
+            else:
+                for x in x2:
+                    if x1 - x in self.offset:
+                        return True
+
+        return False
 
     def __str__(self):
         return " ".join([str(self.position(self.c1)), str(self.position(self.c2))])
 
 
-
+# color-nationality-pet-cigarette-drink
 constraints = [
-    Constraint(c1={'nationality': 'England'}, c2={'color': 'Red'}, offset=0),                 # Anglezi jeton në shtëpinë e kuqe
-    Constraint(c2={'pet': 'Dog'}, c1={'nationality': 'Spain'}, offset=0),                     # Spanjolli zotëron qenin
-    Constraint(c1={'cigarette': 'Marlboro'}, c2={'color': 'Yellow'}, offset=0),               # Marlboro thithet në shtëpinë e verdhë.
-    Constraint(c1={'cigarette': 'Chesterfield'}, c2={'pet': 'Fox'}, offset=[-1, 1]),          # Njeriu që pi duhan Chesterfields jeton në shtëpinë pranë burrit me dhelpra.
-    Constraint(c1={'nationality': 'Norway'}, c2={'color': 'Blue'}, offset=[-1, 1]),           # Norvegjiani jeton pranë shtëpisë blu.
-    Constraint(c1={'cigarette': 'Winston'}, c2={'pet': 'Snail'}, offset=0),                   # Konsumuesi i duhanit Winston zotëron kërmij.
-    Constraint(c1={'drink': 'Orange Juice'}, c2={'cigarette': 'Lucky Strike'}, offset=0),     # Konsumuesi i duhanit Lucky Strike pi lëng portokalli.
-    Constraint(c1={'drink': 'Tea'}, c2={'nationality': 'Ukraine'}, offset=0),                 # Ukrainasi pi çaj.
-    Constraint(c1={'cigarette': 'Parliament'}, c2={'nationality': 'Japan'}, offset=0),        # Japonezët pinë duhenin Parlament.
-    Constraint(c1={'cigarette': 'Marlboro'}, c2={'pet': 'Horse'}, offset=[-1, 1]),            # Marlboro konsumohet në shtëpinë pranë shtëpisë ku mbahet kali.
-    Constraint(c1={'drink': 'Coffee'}, c2={'color': 'Green'}, offset=0),                      # Kafja pihet në shtëpinë e gjelbër.
-    Constraint(c1={'drink': 'Coffee'}, c2={'color': 'Ivory'}, offset=1)                       #Shtëpia e gjelbër është menjëherë në të djathtë të shtëpisë së fildishtë.
+    Constraint(c2={'nationality': 'England'}, c1={'color': 'Red'}, offset=0),               # Anglezi jeton në shtëpinë e kuqe
+    Constraint(c2={'pet': 'Dog'}, c1={'nationality': 'Spain'}, offset=0),                   # Spanjolli zotëron qenin
+    Constraint(c2={'cigarette': 'Marlboro'}, c1={'color': 'Yellow'}, offset=0),             # Marlboro thithet në shtëpinë e verdhë.
+    Constraint(c2={'cigarette': 'Winston'}, c1={'pet': 'Snail'}, offset=0),                 # Konsumuesi i duhanit Winston zotëron kërmij.
+    Constraint(c2={'drink': 'Orange Juice'}, c1={'cigarette': 'Lucky Strike'}, offset=0),   # Konsumuesi i duhanit Lucky Strike pi lëng portokalli.
+    Constraint(c2={'drink': 'Tea'}, c1={'nationality': 'Ukraine'}, offset=0),               # Ukrainasi pi çaj.
+    Constraint(c2={'cigarette': 'Parliament'}, c1={'nationality': 'Japan'}, offset=0),      # Japonezët pinë duhenin Parlament.
+    Constraint(c2={'drink': 'Coffee'}, c1={'color': 'Green'}, offset=0),                    # Kafja pihet në shtëpinë e gjelbër.
+    Constraint(c2={'drink': 'Coffee'}, c1={'color': 'Ivory'}, offset=1),                    # Shtëpia e gjelbër është menjëherë në të djathtë të shtëpisë së fildishtë.
+    Constraint(c2={'cigarette': 'Chesterfield'}, c1={'pet': 'Fox'}, offset=[-1, 1]),        # Njeriu që pi duhan Chesterfields jeton në shtëpinë pranë burrit me dhelpra.
+    Constraint(c1={'color': 'Blue'}, c2={'nationality': 'Norway'}, offset=[1, -1]),         # Norvegjiani jeton pranë shtëpisë blu.
+    Constraint(c2={'cigarette': 'Marlboro'}, c1={'pet': 'Horse'}, offset=[-1, 1])           # Marlboro konsumohet në shtëpinë pranë shtëpisë ku mbahet kali.
 ]
 
 colors = ['Yellow', 'Red', 'Blue', 'Green', 'Ivory']
@@ -168,6 +187,9 @@ class SolveEnigma:
         return False
 
 
-SolveEnigma().add_color(houses[0])
-for h in houses:
-    print(h)
+
+if __name__ == '__main__':
+
+    SolveEnigma().add_color(houses[0])
+    for h in houses:
+        print(h)
