@@ -1,6 +1,33 @@
-class House:
-    instances = list()
+from typing import Tuple, Optional
 
+
+class Constraint:
+
+    def __init__(self, offset, c1: dict, c2: dict = None):
+        self.c1 = c1
+        self.c2 = c2
+        self.offset = offset
+
+
+constraints = [
+    Constraint(c1={'nationality': 'England'}, c2={'color': 'Red'}, offset=0),               # Anglezi jeton në shtëpinë e kuqe
+    Constraint(c1={'pet': 'Dog'}, c2={'nationality': 'Spain'}, offset=0),                   # Spanjolli zotëron qenin
+    Constraint(c1={'nationality': 'Norway'}, offset=0),                                     # Norvegjezi jeton ne shtepinë e parë
+    Constraint(c1={'drink': 'Milk'}, offset=2),                                             # Qumështi pihet në shtepinë e mesme
+    Constraint(c1={'cigarette': 'Marlboro'}, c2={'color': 'Yellow'}, offset=0),             # Marlboro thithet në shtëpinë e verdhë.
+    Constraint(c1={'cigarette': 'Winston'}, c2={'pet': 'Snail'}, offset=0),                 # Konsumuesi i duhanit Winston zotëron kërmij.
+    Constraint(c1={'drink': 'Orange Juice'}, c2={'cigarette': 'Lucky Strike'}, offset=0),   # Konsumuesi i duhanit Lucky Strike pi lëng portokalli.
+    Constraint(c1={'drink': 'Tea'}, c2={'nationality': 'Ukraine'}, offset=0),               # Ukrainasi pi çaj.
+    Constraint(c1={'cigarette': 'Parliament'}, c2={'nationality': 'Japan'}, offset=0),      # Japonezët pinë duhenin Parlament.
+    Constraint(c1={'drink': 'Coffee'}, c2={'color': 'Green'}, offset=0),                    # Kafja pihet në shtëpinë e gjelbër.
+    Constraint(c1={'color': 'Ivory'}, c2={'color': 'Green'}, offset=1),                     # Shtëpia e gjelbër është menjëherë në të djathtë të shtëpisë së fildishtë.
+    Constraint(c1={'cigarette': 'Chesterfield'}, c2={'pet': 'Fox'}, offset=[-1, 1]),        # Njeriu që pi duhan Chesterfields jeton në shtëpinë pranë burrit me dhelpra.
+    Constraint(c1={'nationality': 'Norway'}, c2={'color': 'Blue'}, offset=[-1, 1]),         # Norvegjiani jeton pranë shtëpisë blu.
+    Constraint(c1={'cigarette': 'Marlboro'}, c2={'pet': 'Horse'}, offset=[-1, 1]),          # Marlboro konsumohet në shtëpinë pranë shtëpisë ku mbahet kali.
+]
+
+
+class House:
     def __init__(self, color=None, nationality=None, drink=None, pet=None, cigarette=None):
         self.color = color
         self.nationality = nationality
@@ -8,188 +35,114 @@ class House:
         self.pet = pet
         self.cigarette = cigarette
 
-        self.__class__.instances.append(self)
-
     def __str__(self):
         return " | ".join(
             (str(self.color), str(self.nationality), str(self.drink), str(self.pet), str(self.cigarette))) + " |"
 
 
-h_1, h_2, h_3, h_4, h_5 = House(nationality='Norway'), House(), House(drink='Milk'), House(), House()
-houses = [h_1, h_2, h_3, h_4, h_5]
+h_1, h_2, h_3, h_4, h_5 = House(), House(), House(), House(), House()
+Houses = [h_1, h_2, h_3, h_4, h_5]
 
 
-class Constraint:
-    instances = []
+def set_constraint(constraint: Constraint):
+    for index, house in enumerate(Houses):
+        valid, other_house = eligible_to_put_in_house(constraint, house)
+        if valid:
+            house.__setattr__(list(constraint.c1.keys())[0], constraint.c1[list(constraint.c1.keys())[0]])
+            if constraint.c2 is not None:
+                if other_house is None:
+                    house.__setattr__(list(constraint.c2.keys())[0], constraint.c2[list(constraint.c2.keys())[0]])
+                else:
+                    other_house.__setattr__(list(constraint.c2.keys())[0], constraint.c2[list(constraint.c2.keys())[0]])
 
-    def __init__(self, offset, c1, c2=None):
-        self.c1 = c1
-        self.c2 = c2
-        self.offset = offset
-        self.__class__.instances.append(self)
+            if constraints.index(constraint) == 13:
+                return True
 
-    def check_value(self, c_key, c_val):
-        if {c_key: c_val} not in (self.c1, self.c2):
-            return True
-        return self.pos()
+            if set_constraint(constraints[constraints.index(constraint) + 1]):
+                return True
 
-    @staticmethod
-    def position(x):
-        key, val = list(x.keys())[0], x[list(x.keys())[0]]
-        for house in houses:
-            if getattr(house, key) == val:
-                return houses.index(house)
+            house.__setattr__(list(constraint.c1.keys())[0], None)
+            if constraint.c2 is not None:
+                if other_house is None:
+                    house.__setattr__(list(constraint.c2.keys())[0], None)
+                else:
+                    other_house.__setattr__(list(constraint.c2.keys())[0], None)
 
-        x = list(map(lambda h: (houses.index(h) if getattr(h, key) is None else None), houses))
-        return [item for item in x if item is not None]
+    return False
 
-    # nese pozita e c1 edhe c2 - offset jon None ose == values return True
 
-    def pos(self):
-        x1 = self.position(self.c1)
-        x2 = self.position(self.c2)
-        if type(x1) == list:
-            x1 = next(iter(x1))
+def eligible_to_put_in_house(constraint: Constraint, house) -> Tuple[bool, Optional[House]]:
+    c1_actual_val = getattr(house, list(constraint.c1.keys())[0], None)
+    c1_tentative_val = constraint.c1[list(constraint.c1.keys())[0]]
 
-        if type(self.offset) == int:
-            if type(x2) == list:
-                for x in x2:
-                    if x1 - x == self.offset:
-                        return True
-            else:
-                return x1 - self.offset == x2
+    if constraint.c2 is None:
+        if Houses.index(house) != constraint.offset:
+            return False, None
+        if c1_actual_val is None or c1_actual_val == c1_tentative_val:
+            return True, None
+        return False, None
+
+    c2_actual_val = getattr(house, list(constraint.c2.keys())[0], None)
+    c2_tentative_val = constraint.c2[list(constraint.c2.keys())[0]]
+
+    if constraint.offset == 0:
+        if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (c2_actual_val is None or c2_actual_val == c2_tentative_val):
+            return True, None
+
+    elif isinstance(constraint.offset, int):
+        if Houses.index(house) + constraint.offset > 4:
+            return False, None
+
+        next_house = Houses[Houses.index(house) + constraint.offset]
+        # offset shows how far away is the second house from the first house
+        next_house_c2_val = getattr(next_house, list(constraint.c2.keys())[0], None)
+
+        if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (
+                next_house_c2_val is None or next_house_c2_val == c2_tentative_val):
+            return True, next_house
+
+    else:
+        if Houses.index(house) + 1 > 4:
+            # try left
+            next_house = Houses[Houses.index(house) - 1]
+            next_house_c2_val = getattr(next_house, list(constraint.c2.keys())[0], None)
+            if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (
+                    next_house_c2_val is None or next_house_c2_val == c2_tentative_val):
+                return True, next_house
+
+        elif Houses.index(house) - 1 < 0:
+            # try right
+            next_house = Houses[Houses.index(house) + 1]
+            next_house_c2_val = getattr(next_house, list(constraint.c2.keys())[0], None)
+            if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (
+                    next_house_c2_val is None or next_house_c2_val == c2_tentative_val):
+                return True, next_house
+
         else:
-            if type(x2) == int:
-                return x1 - x2 in self.offset
-            else:
-                for x in x2:
-                    if x1 - x in self.offset:
-                        return True
+            # try right
+            next_house = Houses[Houses.index(house) + 1]
+            next_house_c2_val = getattr(next_house, list(constraint.c2.keys())[0], None)
+            if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (
+                    next_house_c2_val is None or next_house_c2_val == c2_tentative_val):
+                return True, next_house
+            # try left
+            next_house = Houses[Houses.index(house) - 1]
+            next_house_c2_val = getattr(next_house, list(constraint.c2.keys())[0], None)
+            if (c1_actual_val is None or c1_actual_val == c1_tentative_val) and (
+                    next_house_c2_val is None or next_house_c2_val == c2_tentative_val):
+                return True, next_house
 
-        return False
-
-    def __str__(self):
-        return " ".join([str(self.position(self.c1)), str(self.position(self.c2))])
-
-
-# color-nationality-pet-cigarette-drink
-constraints = [
-    Constraint(c2={'nationality': 'England'}, c1={'color': 'Red'}, offset=0),               # Anglezi jeton në shtëpinë e kuqe
-    Constraint(c2={'pet': 'Dog'}, c1={'nationality': 'Spain'}, offset=0),                   # Spanjolli zotëron qenin
-    Constraint(c2={'cigarette': 'Marlboro'}, c1={'color': 'Yellow'}, offset=0),             # Marlboro thithet në shtëpinë e verdhë.
-    Constraint(c2={'cigarette': 'Winston'}, c1={'pet': 'Snail'}, offset=0),                 # Konsumuesi i duhanit Winston zotëron kërmij.
-    Constraint(c2={'drink': 'Orange Juice'}, c1={'cigarette': 'Lucky Strike'}, offset=0),   # Konsumuesi i duhanit Lucky Strike pi lëng portokalli.
-    Constraint(c2={'drink': 'Tea'}, c1={'nationality': 'Ukraine'}, offset=0),               # Ukrainasi pi çaj.
-    Constraint(c2={'cigarette': 'Parliament'}, c1={'nationality': 'Japan'}, offset=0),      # Japonezët pinë duhenin Parlament.
-    Constraint(c2={'drink': 'Coffee'}, c1={'color': 'Green'}, offset=0),                    # Kafja pihet në shtëpinë e gjelbër.
-    Constraint(c2={'drink': 'Coffee'}, c1={'color': 'Ivory'}, offset=1),                    # Shtëpia e gjelbër është menjëherë në të djathtë të shtëpisë së fildishtë.
-    Constraint(c2={'cigarette': 'Chesterfield'}, c1={'pet': 'Fox'}, offset=[-1, 1]),        # Njeriu që pi duhan Chesterfields jeton në shtëpinë pranë burrit me dhelpra.
-    Constraint(c1={'color': 'Blue'}, c2={'nationality': 'Norway'}, offset=[1, -1]),         # Norvegjiani jeton pranë shtëpisë blu.
-    Constraint(c2={'cigarette': 'Marlboro'}, c1={'pet': 'Horse'}, offset=[-1, 1])           # Marlboro konsumohet në shtëpinë pranë shtëpisë ku mbahet kali.
-]
-
-colors = ['Yellow', 'Red', 'Blue', 'Green', 'Ivory']
-nationalities = ['Spain', 'England', 'Japan', 'Ukraine']
-pets = ['Fox', 'Horse', 'Dog', 'Snail', 'Zebra']
-cigarettes = ['Marlboro', 'Lucky Strike', 'Parliament', 'Winston', 'Chesterfield']
-drinks = ['Water', 'Coffee', 'Tea', 'Orange Juice']
-
-
-class SolveEnigma:
-
-    @staticmethod
-    def check_constraints(c_key, c_val):
-        return all([constraint.check_value(c_key, c_val) for constraint in constraints])
-
-    def add_drink(self, house):
-        if house.drink is not None:
-            return self.add_color(houses[houses.index(house) + 1])
-
-        for drink in drinks:
-            if self.check_constraints('drink', drink):
-                house.drink = drink
-                drinks.remove(drink)
-
-                if houses.index(house) == 4:
-                    return True
-
-                if self.add_color(houses[houses.index(house) + 1]):
-                    return True
-
-                else:
-                    drinks.append(drink)
-                    house.drink = None
-
-        return False
-
-    def add_cigarette(self, house):
-        if house.cigarette is not None:
-            return self.add_drink(house)
-
-        for cigarette in cigarettes:
-            if self.check_constraints('cigarette', cigarette):
-                house.cigarette = cigarette
-                cigarettes.remove(cigarette)
-                if self.add_drink(house):
-                    return True
-                else:
-                    cigarettes.append(cigarette)
-                    house.cigarette = None
-
-        return False
-
-    def add_pet(self, house):
-        if house.pet is not None:
-            return self.add_cigarette(house)
-
-        for pet in pets:
-            if self.check_constraints('pet', pet):
-                house.pet = pet
-                pets.remove(pet)
-                if self.add_cigarette(house):
-                    return True
-                else:
-                    pets.append(pet)
-                    house.pet = None
-
-        return False
-
-    def add_nationality(self, house):
-        if house.nationality is not None:
-            return self.add_pet(house)
-
-        for nationality in nationalities:
-            if self.check_constraints('nationality', nationality):
-                house.nationality = nationality
-                nationalities.remove(nationality)
-                if self.add_pet(house):
-
-                    return True
-                else:
-                    nationalities.append(nationality)
-                    house.nationality = None
-        return False
-
-    def add_color(self, house):
-        if house.color is not None:
-            return self.add_nationality(house)
-
-        for color in colors:
-            if self.check_constraints('color', color):
-                house.color = color
-                colors.remove(color)
-
-                if self.add_nationality(house):
-                    return True
-                else:
-                    colors.append(color)
-                    house.color = None
-        return False
-
+    return False, None
 
 
 if __name__ == '__main__':
-
-    SolveEnigma().add_color(houses[0])
-    for h in houses:
-        print(h)
+    answer_houses = {}
+    if set_constraint(constraints[0]):
+        for house in Houses:
+            if getattr(house, 'drink', None) is None:
+                missing_drink_house = house
+            if getattr(house, 'pet', None) is None:
+                missing_pet_house = house
+            print(house)
+    print(
+        f'\n\nZebra belongs to the {missing_pet_house.color} house.\nThe {missing_drink_house.nationality} guy who smokes {missing_drink_house.cigarette} drinks a lot of water.')
