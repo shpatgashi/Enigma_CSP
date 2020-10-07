@@ -136,7 +136,6 @@ def eligible_to_put_in_house(constraint: Constraint, house) -> Tuple[bool, Optio
 
 
 if __name__ == '__main__':
-    answer_houses = {}
     if set_constraint(constraints[0]):
         for house in Houses:
             if getattr(house, 'drink', None) is None:
